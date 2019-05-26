@@ -1,4 +1,4 @@
 venv/
 *.jpg
 .idea/
-dataset_raw/*
+dataset_raw/Annotation/*

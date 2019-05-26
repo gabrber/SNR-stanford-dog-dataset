@@ -1,6 +1,6 @@
 import h5py
 import matplotlib.pyplot as plt
-
+import functools
 import keras
 from keras import backend as K
 from keras.callbacks import ModelCheckpoint
@@ -27,14 +27,16 @@ def save_history(history, filename):
 def plot_history(history):
     acc = history.history['acc']
     val_acc = history.history['val_acc']
+    val_top5 = history.history['top5_acc']
     loss = history.history['loss']
     val_loss = history.history['val_loss']
     x = range(1, len(acc) + 1)
     plt.figure(figsize=(12, 5))
     plt.subplot(1, 2, 1)
     plt.plot(x, acc, 'b', label='Training acc')
-    plt.plot(x, val_acc, 'r', label='Validation acc')
-    plt.title('Training and validation accuracy')
+    plt.plot(x, val_acc, 'r', label='Validation top1 acc')
+    plt.plot(x, val_top5, 'g', label='Validation top5 acc')
+    plt.title('Training and validation top1, top5 accuracy')
     plt.legend()
     plt.subplot(1, 2, 2)
     plt.plot(x, loss, 'b', label='Training loss')
@@ -46,6 +48,7 @@ def plot_history(history):
 def plot_history_read(history):
     acc = history['acc']
     val_acc = history['val_acc']
+    val_top5 = history.history['top5_acc']
     loss = history['loss']
     val_loss = history['val_loss']
     x = range(1, len(acc) + 1)
@@ -53,6 +56,7 @@ def plot_history_read(history):
     plt.subplot(1, 2, 1)
     plt.plot(x, acc, 'b', label='Training acc')
     plt.plot(x, val_acc, 'r', label='Validation acc')
+    plt.plot(x, val_top5, 'g', label='Validation top5 acc')
     plt.title('Training and validation accuracy')
     plt.legend()
     plt.subplot(1, 2, 2)
@@ -112,7 +116,10 @@ valid_generator=valid_datagen.flow_from_directory('dataset\\valid',
                                                  class_mode='categorical',
                                                  shuffle=True)
 
-model.compile(optimizer='Adam',loss='categorical_crossentropy',metrics=['accuracy'])
+top5_acc = functools.partial(keras.metrics.top_k_categorical_accuracy, k=5)
+top5_acc.__name__ = "top5_acc"
+
+model.compile(optimizer='Adam',loss='categorical_crossentropy',metrics=['accuracy',top5_acc])
 # Adam optimizer
 # loss function will be categorical cross entropy
 # evaluation metric will be accuracy
@@ -120,25 +127,41 @@ model.compile(optimizer='Adam',loss='categorical_crossentropy',metrics=['accurac
 step_size_train=train_generator.n//train_generator.batch_size
 valid_steps=valid_generator.n//valid_generator.batch_size
 
+# Train and save model
 checkpoint = ModelCheckpoint("models\\zad1_mobilenet.h5", monitor='acc', verbose=1, save_best_only=True, save_weights_only=False, mode='max')
 
-history = model.fit_generator(generator=train_generator,
-                    steps_per_epoch=step_size_train,
-                    epochs=10,
-                    validation_data = valid_generator,
-                    validation_steps = valid_steps,
-                    callbacks=[checkpoint])
-
-save_history(history, "history\\zad1_mobilenet")
-plot_history(history)
+# history = model.fit_generator(generator=train_generator,
+#                     steps_per_epoch=step_size_train,
+#                     epochs=10,
+#                     validation_data = valid_generator,
+#                     validation_steps = valid_steps,
+#                     callbacks=[checkpoint])
+#
+# save_history(history, "history\\zad1_mobilenet")
+# plot_history(history)
 
 # Load history from file
-# history = json.load(open("history\\zad1_mobilenet", 'r'))
-# plot_history_read(history)
+history = json.load(open("history\\zad1_mobilenet", 'r'))
+plot_history_read(history)
 
 # Check .h5 file
 # with h5py.File('zad1_weights.h5', mode='r') as f:
 #     for key in f:
 #         print(key,f[key])
 
-model_zad1 = load_model('models\\zad1_mobilenet.h5')
+model_zad1 = load_model('models\\zad1_mobilenet.h5', custom_objects={'top5_acc': top5_acc})
+
+# test dataset
+test_datagen=ImageDataGenerator(preprocessing_function=preprocess_input)
+test_generator=test_datagen.flow_from_directory('dataset\\test',
+                                                 target_size=(image_size,image_size),
+                                                 color_mode='rgb',
+                                                 batch_size=1,
+                                                 class_mode='categorical',
+                                                 shuffle=True)
+test_steps=test_generator.n//test_generator.batch_size
+
+print(model_zad1.metrics_names)
+testing = model_zad1.evaluate_generator(test_generator,
+                                        test_steps)
+print(testing)
