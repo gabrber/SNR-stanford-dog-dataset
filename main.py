@@ -169,10 +169,9 @@ def test_task(model):
     print("Original images")
     print(original_testing)
 
-def load_model(model_name):
+def load_model_from_file(model_name):
     top5_acc = functools.partial(keras.metrics.top_k_categorical_accuracy, k=5)
     top5_acc.__name__ = "top5_acc"
-
     model = load_model("models\\" + model_name + ".h5", custom_objects={'top5_acc': top5_acc})
     return model
 
@@ -186,7 +185,7 @@ def zad1():
     trainable_layers_model = set_trainable_layers(base_model,-2)
     # load_hisotry("zad1")
     model = train_task(trainable_layers_model,"zad1")
-    # model = load_model("zad1")
+    # model = load_model_from_file("zad1")
     test_task(model)
 
 def zad2():
@@ -194,16 +193,15 @@ def zad2():
     trainable_layers_model = set_trainable_layers(base_model,-5)
     # load_hisotry("zad2")
     model = train_task(base_model,"zad2")
-    # model = load_model("zad2")
+    # model = load_model_from_file("zad2")
     test_task(model)
 
 def zad3a():
     base_model = prepare_base_model()
     # load_hisotry("zad3a")
     model = train_task(base_model,"zad3a")
-    # model = load_model("zad3a")
+    # model = load_model_from_file("zad3a")
     test_task(model)
-
 
 if __name__ == "__main__":
 
