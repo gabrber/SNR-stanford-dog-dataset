@@ -25,16 +25,18 @@ def save_history(history, filename):
         json.dump(history.history, f)
 
 def plot_history(history):
-    acc = history.history['acc']
-    val_acc = history.history['val_acc']
-    val_top5 = history.history['top5_acc']
+    train_top1_acc = history.history['acc']
+    train_top5_acc = history.history['top5_acc']
+    val_top1 = history.history['val_acc']
+    val_top5 = history.history['val_top5_acc']
     loss = history.history['loss']
     val_loss = history.history['val_loss']
-    x = range(1, len(acc) + 1)
+    x = range(1, len(train_top1_acc) + 1)
     plt.figure(figsize=(12, 5))
     plt.subplot(1, 2, 1)
-    plt.plot(x, acc, 'b', label='Training acc')
-    plt.plot(x, val_acc, 'r', label='Validation top1 acc')
+    plt.plot(x, train_top1_acc, 'b', label='Training top1 acc')
+    plt.plot(x, train_top5_acc, 'c', label='Training top5 acc')
+    plt.plot(x, val_top1, 'r', label='Validation top1 acc')
     plt.plot(x, val_top5, 'g', label='Validation top5 acc')
     plt.title('Training and validation top1, top5 accuracy')
     plt.legend()
@@ -46,16 +48,18 @@ def plot_history(history):
     plt.show()
 
 def plot_history_read(history):
-    acc = history['acc']
-    val_acc = history['val_acc']
-    val_top5 = history.history['top5_acc']
+    train_top1_acc = history['acc']
+    train_top5_acc = history['top5_acc']
+    val_top1 = history['val_acc']
+    val_top5 = history['val_top5_acc']
     loss = history['loss']
     val_loss = history['val_loss']
-    x = range(1, len(acc) + 1)
+    x = range(1, len(train_top1_acc) + 1)
     plt.figure(figsize=(12, 5))
     plt.subplot(1, 2, 1)
-    plt.plot(x, acc, 'b', label='Training acc')
-    plt.plot(x, val_acc, 'r', label='Validation acc')
+    plt.plot(x, train_top1_acc, 'b', label='Training top1 acc')
+    plt.plot(x, train_top5_acc, 'c', label='Training top5 acc')
+    plt.plot(x, val_top1, 'r', label='Validation top1 acc')
     plt.plot(x, val_top5, 'g', label='Validation top5 acc')
     plt.title('Training and validation accuracy')
     plt.legend()
@@ -100,7 +104,7 @@ for layer in model.layers:
 
 #training dataset
 train_datagen=ImageDataGenerator(preprocessing_function=preprocess_input) #included in our dependencies
-train_generator=train_datagen.flow_from_directory('dataset\\train',
+train_generator=train_datagen.flow_from_directory('bbox_dataset\\train',
                                                  target_size=(image_size,image_size),
                                                  color_mode='rgb',
                                                  batch_size=32,
@@ -109,7 +113,7 @@ train_generator=train_datagen.flow_from_directory('dataset\\train',
 
 # validation dataset
 valid_datagen=ImageDataGenerator(preprocessing_function=preprocess_input)
-valid_generator=valid_datagen.flow_from_directory('dataset\\valid',
+valid_generator=valid_datagen.flow_from_directory('bbox_dataset\\valid',
                                                  target_size=(image_size,image_size),
                                                  color_mode='rgb',
                                                  batch_size=32,
@@ -149,19 +153,36 @@ plot_history(history)
 #     for key in f:
 #         print(key,f[key])
 
-#model_zad3 = load_model('models\\zad3_mobilenet.h5', custom_objects={'top5_acc': top5_acc})
+#model = load_model('models\\zad3_mobilenet.h5', custom_objects={'top5_acc': top5_acc})
 
 # test dataset
 test_datagen=ImageDataGenerator(preprocessing_function=preprocess_input)
-test_generator=test_datagen.flow_from_directory('dataset\\test',
+test_generator=test_datagen.flow_from_directory('bbox_dataset\\test',
                                                  target_size=(image_size,image_size),
                                                  color_mode='rgb',
                                                  batch_size=1,
                                                  class_mode='categorical',
                                                  shuffle=True)
 test_steps=test_generator.n//test_generator.batch_size
-
-print(model.metrics_names)
 testing = model.evaluate_generator(test_generator,
                                         test_steps)
+
+print(model.metrics_names)
+print("Cropped images")
 print(testing)
+
+original_test_datagen=ImageDataGenerator(preprocessing_function=preprocess_input)
+original_test_generator=original_test_datagen.flow_from_directory('dataset\\test',
+                                                 target_size=(image_size,image_size),
+                                                 color_mode='rgb',
+                                                 batch_size=1,
+                                                 class_mode='categorical',
+                                                 shuffle=True)
+original_test_steps=original_test_generator.n//original_test_generator.batch_size
+
+
+original_testing = model.evaluate_generator(original_test_generator,
+                                        original_test_steps)
+
+print("Original images")
+print(original_testing)

@@ -33,9 +33,10 @@ import os
 import matplotlib.pyplot as plt
 from xml.dom import minidom
 
-def get_bbox(annotations_dir, img, data_dir, img_name):
+
+def get_bbox(img, data_dir, img_name):
     annotation_name = img_name.split('.')[0]
-    mydoc = minidom.parse(annotations_dir + '\\' + data_dir + '\\' + annotation_name)
+    mydoc = minidom.parse('dataset_raw\\Annotation\\' + data_dir + '\\' + annotation_name)
     xmin = int(mydoc.childNodes[0].getElementsByTagName("xmin")[0].childNodes[0].toxml())
     ymin = int(mydoc.childNodes[0].getElementsByTagName("ymin")[0].childNodes[0].toxml())
     xmax = int(mydoc.childNodes[0].getElementsByTagName("xmax")[0].childNodes[0].toxml())
@@ -67,42 +68,19 @@ def split_data(data_dir, train_dir, valid_dir, test_dir, nb_train = 0.6, nb_vali
         train_count = int(all * nb_train)
         valid_count = int(all * nb_valid)
         count = 0
-        for img in listdir(img_dir):
-            if (count < train_count):
-                copyfile(img_dir + "\\" + img, train_dir + "\\" + label + "\\" + img)
-                count=count+1
-            elif (count < (train_count + valid_count)):
-                copyfile(img_dir + "\\" + img, valid_dir + "\\" + label + "\\" + img)
-                count=count+1
-            else:
-                copyfile(img_dir + "\\" + img, test_dir + "\\" + label + "\\" + img)
-
-def crop_data(annotations_dir,original_dir, cropped_dir):
-    print("[INFO] cropping data...")
-    for img_dir_name in listdir(annotations_dir):
-
-        label = img_dir_name.split("-")[1]
-        if not os.path.exists(cropped_dir + "\\" + label):
-            os.makedirs(cropped_dir + "\\" + label)
-        img_dir = original_dir + "\\" + label
         for img_name in listdir(img_dir):
             img = cv2.imread(img_dir + "\\" + img_name)
-            cropped_img = get_bbox(annotations_dir, img, img_dir_name, img_name)
-            cv2.imwrite(cropped_dir + "\\" + label + "\\" + img_name, cropped_img)
-
+            cropped_img = get_bbox(img, img_dir_name, img_name)
+            if (count < train_count):
+                cv2.imwrite(train_dir + "\\" + label + "\\" + img_name, cropped_img)
+                count=count+1
+            elif (count < (train_count + valid_count)):
+                cv2.imwrite(valid_dir + "\\" + label + "\\" + img_name, cropped_img)
+                count=count+1
+            else:
+                cv2.imwrite(test_dir + "\\" + label + "\\" + img_name, cropped_img)
 
 if __name__ == '__main__':
 
-    prepare_directories("dataset\\train","dataset\\valid","dataset\\test")
-    split_data("dataset_raw\\Images","dataset\\train","dataset\\valid","dataset\\test")
-
     prepare_directories("bbox_dataset\\train","bbox_dataset\\valid","bbox_dataset\\test")
-    crop_data("dataset_raw\\Annotation","dataset\\train","bbox_dataset\\train")
-    crop_data("dataset_raw\\Annotation","dataset\\valid","bbox_dataset\\valid")
-    crop_data("dataset_raw\\Annotation","dataset\\test","bbox_dataset\\test")
-
-
-
-
-
-
+    split_data("dataset_raw\\Images","bbox_dataset\\train","bbox_dataset\\valid","bbox_dataset\\test")

@@ -2,7 +2,7 @@ import h5py
 import matplotlib.pyplot as plt
 import functools
 import keras
-from keras import backend as K
+from keras import backend as K, Sequential
 from keras.callbacks import ModelCheckpoint
 from keras.engine.saving import load_model
 from keras.layers.core import Dense, Activation
@@ -85,18 +85,25 @@ image_size = 128
 # for layer in base_model_full.layers:
 #     print(layer, layer.trainable)
 
-#prepare model
-base_model=MobileNet(weights='imagenet',include_top=False,input_shape = (image_size, image_size, 3)) #imports the mobilenet model and discards the last 1000 neuron layer.
-x=base_model.output
-x=GlobalAveragePooling2D()(x)
-x=Dense(1024,activation='relu')(x) #we add dense layers so that the model can learn more complex functions and classify for better results.
-x=Dense(1024,activation='relu')(x) #dense layer 2
-x=Dense(512,activation='relu')(x) #dense layer 3
-prediction=Dense(120,activation='softmax')(x) #final layer with softmax activation
-model=Model(inputs=base_model.input,outputs=prediction)
+top5_acc = functools.partial(keras.metrics.top_k_categorical_accuracy, k=5)
+top5_acc.__name__ = "top5_acc"
 
-for layer in model.layers[:-8]:
-    layer.trainable=False
+#prepare model
+base_model = load_model('models\\zad3_mobilenet.h5', custom_objects={'top5_acc': top5_acc}) #imports the mobilenet model and discards the last 1000 neuron layer.
+
+print(len(base_model.layers))
+for layer in base_model.layers:
+    print(layer, layer.trainable)
+print(len(base_model.layers))
+
+
+model = Sequential()
+for layer in base_model.layers[0:44]:
+    model.add(layer)
+
+for layer in base_model.layers[73:]:
+    #print(layer)
+    model.add(layer)
 
 print(len(model.layers))
 for layer in model.layers:
@@ -120,8 +127,6 @@ valid_generator=valid_datagen.flow_from_directory('bbox_dataset\\valid',
                                                  class_mode='categorical',
                                                  shuffle=True)
 
-top5_acc = functools.partial(keras.metrics.top_k_categorical_accuracy, k=5)
-top5_acc.__name__ = "top5_acc"
 
 model.compile(optimizer='Adam',loss='categorical_crossentropy',metrics=['accuracy',top5_acc])
 # Adam optimizer
@@ -131,9 +136,9 @@ model.compile(optimizer='Adam',loss='categorical_crossentropy',metrics=['accurac
 step_size_train=train_generator.n//train_generator.batch_size
 valid_steps=valid_generator.n//valid_generator.batch_size
 
-# Train and save model
-checkpoint = ModelCheckpoint("models\\zad2_mobilenet.h5", monitor='acc', verbose=1, save_best_only=True, save_weights_only=False, mode='max')
+checkpoint = ModelCheckpoint("models\\zad3_b_mobilenet.h5", monitor='acc', verbose=1, save_best_only=True, save_weights_only=False, mode='max')
 
+# Train and save model
 history = model.fit_generator(generator=train_generator,
                     steps_per_epoch=step_size_train,
                     epochs=10,
@@ -141,19 +146,19 @@ history = model.fit_generator(generator=train_generator,
                     validation_steps = valid_steps,
                     callbacks=[checkpoint])
 
-save_history(history, "history\\zad2_mobilenet")
+save_history(history, "history\\zad3_b_mobilenet")
 plot_history(history)
 
 # Load history from file
-# history = json.load(open("history\\zad2_mobilenet", 'r'))
+# history = json.load(open("history\\zad3_b_mobilenet", 'r'))
 # plot_history_read(history)
 
 # Check .h5 file
-# with h5py.File('zad2_weights.h5', mode='r') as f:
+# with h5py.File('zad3_b_mobilenet.h5', mode='r') as f:
 #     for key in f:
 #         print(key,f[key])
 
-model = load_model('models\\zad2_mobilenet.h5', custom_objects={'top5_acc': top5_acc})
+#model = load_model('models\\zad3_b_mobilenet.h5', custom_objects={'top5_acc': top5_acc})
 
 # test dataset
 test_datagen=ImageDataGenerator(preprocessing_function=preprocess_input)

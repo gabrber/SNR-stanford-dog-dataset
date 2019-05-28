@@ -31,17 +31,6 @@ import cv2
 import os
 
 import matplotlib.pyplot as plt
-from xml.dom import minidom
-
-def get_bbox(annotations_dir, img, data_dir, img_name):
-    annotation_name = img_name.split('.')[0]
-    mydoc = minidom.parse(annotations_dir + '\\' + data_dir + '\\' + annotation_name)
-    xmin = int(mydoc.childNodes[0].getElementsByTagName("xmin")[0].childNodes[0].toxml())
-    ymin = int(mydoc.childNodes[0].getElementsByTagName("ymin")[0].childNodes[0].toxml())
-    xmax = int(mydoc.childNodes[0].getElementsByTagName("xmax")[0].childNodes[0].toxml())
-    ymax = int(mydoc.childNodes[0].getElementsByTagName("ymax")[0].childNodes[0].toxml())
-    cropped_image = img[ymin:ymax, xmin:xmax]
-    return cropped_image
 
 def prepare_directories(train_dir, valid_dir, test_dir):
     print("[INFO] preparing directories...")
@@ -51,6 +40,7 @@ def prepare_directories(train_dir, valid_dir, test_dir):
         os.makedirs(valid_dir)
     if not os.path.exists(test_dir):
         os.makedirs(test_dir)
+
 
 def split_data(data_dir, train_dir, valid_dir, test_dir, nb_train = 0.6, nb_valid = 0.2):
     print("[INFO] organizing data...")
@@ -77,29 +67,10 @@ def split_data(data_dir, train_dir, valid_dir, test_dir, nb_train = 0.6, nb_vali
             else:
                 copyfile(img_dir + "\\" + img, test_dir + "\\" + label + "\\" + img)
 
-def crop_data(annotations_dir,original_dir, cropped_dir):
-    print("[INFO] cropping data...")
-    for img_dir_name in listdir(annotations_dir):
-
-        label = img_dir_name.split("-")[1]
-        if not os.path.exists(cropped_dir + "\\" + label):
-            os.makedirs(cropped_dir + "\\" + label)
-        img_dir = original_dir + "\\" + label
-        for img_name in listdir(img_dir):
-            img = cv2.imread(img_dir + "\\" + img_name)
-            cropped_img = get_bbox(annotations_dir, img, img_dir_name, img_name)
-            cv2.imwrite(cropped_dir + "\\" + label + "\\" + img_name, cropped_img)
-
-
 if __name__ == '__main__':
 
     prepare_directories("dataset\\train","dataset\\valid","dataset\\test")
     split_data("dataset_raw\\Images","dataset\\train","dataset\\valid","dataset\\test")
-
-    prepare_directories("bbox_dataset\\train","bbox_dataset\\valid","bbox_dataset\\test")
-    crop_data("dataset_raw\\Annotation","dataset\\train","bbox_dataset\\train")
-    crop_data("dataset_raw\\Annotation","dataset\\valid","bbox_dataset\\valid")
-    crop_data("dataset_raw\\Annotation","dataset\\test","bbox_dataset\\test")
 
 
 
