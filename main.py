@@ -2,7 +2,7 @@ import h5py
 import matplotlib.pyplot as plt
 import functools
 import keras
-from keras import backend as K
+from keras import backend as K, Sequential
 from keras.callbacks import ModelCheckpoint
 from keras.engine.saving import load_model
 from keras.layers.core import Dense, Activation
@@ -75,10 +75,10 @@ def prepare_image(file):
     img = image.load_img(img_path + file, target_size=(image_size, image_size))
     img_array = image.img_to_array(img)
     img_array_expanded_dims = np.expand_dims(img_array, axis=0)
-    return keras.applications.mobilenet_v2.preprocess_input(img_array_expanded_dims)
+    return keras.applications.mobilenet.preprocess_input(img_array_expanded_dims)
 
 def prepare_base_model():
-    base_model = MobileNetV2(weights='imagenet', include_top=False, input_shape=(
+    base_model = MobileNet(weights='imagenet', include_top=False, input_shape=(
     image_size, image_size, 3))  # imports the mobilenet model and discards the last 1000 neuron layer.
     x = base_model.output
     x = GlobalAveragePooling2D()(x)
@@ -90,9 +90,9 @@ def set_trainable_layers(model, count):
     for layer in model.layers[:count]:
         layer.trainable = False
 
-    print(len(model.layers))
-    for layer in model.layers:
-        print(layer, layer.trainable)
+    # print(len(model.layers))
+    # for layer in model.layers:
+    #     print(layer, layer.trainable)
 
     return model
 
@@ -179,8 +179,17 @@ def load_hisotry(model_name):
     history = json.load(open("history\\" + model_name, 'r'))
     plot_history_read(history)
 
+def prepare_zad3b_model(model):
+    new_model = Sequential()
+    # Layers from block 0 - 12 (without last block - 13)
+    for layer in model.layers[:-8]:
+        new_model.add(layer)
+    for layer in model.layers[-2:]:
+        new_model.add(layer)
+    return new_model
 
 def zad1():
+    print("[INFO] Processing zad 1")
     base_model = prepare_base_model()
     trainable_layers_model = set_trainable_layers(base_model,-2)
     # load_hisotry("zad1")
@@ -189,26 +198,48 @@ def zad1():
     test_task(model)
 
 def zad2():
+    print("[INFO] Processing zad 2")
     base_model = prepare_base_model()
     trainable_layers_model = set_trainable_layers(base_model,-5)
     # load_hisotry("zad2")
-    model = train_task(base_model,"zad2")
+    model = train_task(trainable_layers_model,"zad2")
     # model = load_model_from_file("zad2")
     test_task(model)
 
+def zad2_extended():
+    print("[INFO] Processing zad 2_extended")
+    base_model = prepare_base_model()
+    trainable_layers_model = set_trainable_layers(base_model,-8)
+    # load_hisotry("zad2_extended")
+    model = train_task(trainable_layers_model,"zad2_extended")
+    # model = load_model_from_file("zad2_extended")
+    test_task(model)
+
 def zad3a():
+    print("[INFO] Processing zad 3a")
     base_model = prepare_base_model()
     # load_hisotry("zad3a")
     model = train_task(base_model,"zad3a")
     # model = load_model_from_file("zad3a")
     test_task(model)
 
+def zad3b():
+    print("[INFO] Processing zad 3b")
+    base_model = load_model_from_file("zad3a")
+    modified_model = prepare_zad3b_model(base_model)
+    # load_hisotry("zad3b")
+    model = train_task(modified_model,"zad3b")
+    # model = load_model_from_file("zad3b")
+    test_task(model)
+
 if __name__ == "__main__":
 
-    image_size = 96
+    image_size = 128
     epochs = 10
     batch = 32
 
     zad1()
     zad2()
+    zad2_extended()
     zad3a()
+    zad3b()
