@@ -19,6 +19,13 @@ import numpy as np
 from IPython.display import Image
 from keras.optimizers import Adam
 import json
+from sklearn import preprocessing, neighbors, svm
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.svm import LinearSVC
+from sklearn.metrics import accuracy_score
+from sklearn.svm import SVC
+import pickle
 
 def save_history(history, filename):
     with open(filename, 'w') as f:
@@ -188,6 +195,64 @@ def prepare_zad3b_model(model):
         new_model.add(layer)
     return new_model
 
+
+def zad4_train(kernel, basemodel_id):
+    # model without last layer
+    model = load_model_from_file(basemodel_id)
+    new_model = Sequential()
+    for layer in model.layers[:-1]:
+        new_model.add(layer)
+    new_model.summary()
+
+    # training data
+    train_datagen = ImageDataGenerator(preprocessing_function=preprocess_input)  # included in our dependencies
+    train_generator = train_datagen.flow_from_directory('bbox_dataset\\train',
+                                                        target_size=(image_size, image_size),
+                                                        color_mode='rgb',
+                                                        batch_size=batch,
+                                                        class_mode='categorical',
+                                                        shuffle=True)
+    X_train = []
+    y_train = []
+    train_steps = train_generator.n // train_generator.batch_size
+
+    # classifier
+    clf = SVC(kernel=kernel, degree=2)
+    clf.get_params(True)
+
+    for i in range(train_steps):
+        X_train, y_train = train_generator.next()
+        y = y_train.argmax(1)
+        X2 = new_model.predict(X_train)
+        clf.fit(X2, y)
+
+    filename = 'models\\'+kernel+'_'+basemodel_id+'.sav'
+    pickle.dump(clf, open(filename, 'wb'))
+
+def zad4_test(image_dir, basemodel_id, kernel):
+    base_model = load_model_from_file(basemodel_id)
+    model = Sequential()
+    for layer in base_model.layers[:-1]:
+        model.add(layer)
+
+    test_datagen = ImageDataGenerator(preprocessing_function=preprocess_input)
+    test_generator = test_datagen.flow_from_directory(image_dir,
+                                                      target_size=(image_size, image_size),
+                                                      color_mode='rgb',
+                                                      batch_size=10000,
+                                                      class_mode='categorical',
+                                                      shuffle=True)
+    X_test, y_test = test_generator.next()
+    y_test = y_test.argmax(1)
+    X2 = model.predict(X_test)
+
+    # load SVC
+    clf_filename='models\\' + kernel + '_' + basemodel_id + '.sav'
+    clf = pickle.load(open(clf_filename, 'rb'))
+    # get the accuracy
+    print("accuracy")
+    print(clf.score(X2, y_test))
+
 def zad1():
     print("[INFO] Processing zad 1")
     base_model = prepare_base_model()
@@ -232,14 +297,26 @@ def zad3b():
     # model = load_model_from_file("zad3b")
     test_task(model)
 
+def zad4():
+    print("[INFO] Processing zad 4")
+    zad4_train('linear','zad3a')
+    # zad4_train('poly','zad3a')
+    # zad4_train('rbf','zad3a')
+    # zad4_train('linear','zad3b')
+    # zad4_train('poly', 'zad3b')
+    # zad4_train('rbf','zad3b')
+    zad4_test('dataset\\test','zad3a','rbf')
+    # zad4_test('dataset\\test', 'zad3b', 'poly')
+
 if __name__ == "__main__":
 
     image_size = 128
     epochs = 10
     batch = 32
 
-    zad1()
-    zad2()
-    zad2_extended()
-    zad3a()
-    zad3b()
+    #zad1()
+    #zad2()
+    #zad2_extended()
+    #zad3a()
+    #zad3b()
+    zad4()
