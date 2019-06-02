@@ -403,7 +403,7 @@ def get_roc(model):
 if __name__ == "__main__":
 
     image_size = 128
-    epochs = 1
+    epochs = 10
     batch = 32
 
     zad1()
