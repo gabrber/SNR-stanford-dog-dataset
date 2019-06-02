@@ -2,7 +2,7 @@ import h5py
 import matplotlib.pyplot as plt
 import functools
 import keras
-from keras import backend as K, Sequential
+from keras import backend as K, Sequential, optimizers
 from keras.callbacks import ModelCheckpoint
 from keras.engine.saving import load_model
 from keras.layers.core import Dense, Activation
@@ -124,10 +124,7 @@ def train_task(model, model_name):
     top5_acc = functools.partial(keras.metrics.top_k_categorical_accuracy, k=5)
     top5_acc.__name__ = "top5_acc"
 
-    model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['accuracy', top5_acc, keras.metrics.precision, keras.metrics.recall])
-    # Adam optimizer
-    # loss function will be categorical cross entropy
-    # evaluation metric will be accuracy
+    model.compile(optimizer=optimizers.SGD(lr=0.0001, momentum=0.9), loss='categorical_crossentropy', metrics=['accuracy', top5_acc, keras.metrics.precision, keras.metrics.recall])
 
     step_size_train = train_generator.n // train_generator.batch_size
     valid_steps = valid_generator.n // valid_generator.batch_size
