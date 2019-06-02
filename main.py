@@ -27,6 +27,7 @@ from sklearn.metrics import accuracy_score, classification_report, precision_rec
 from sklearn.svm import SVC
 import pickle
 from sklearn.metrics import roc_curve, auc
+import tensorflow as tf
 
 def save_history(history, filename):
     with open(filename, 'w') as f:
@@ -104,6 +105,29 @@ def set_trainable_layers(model, count):
 
     return model
 
+def precision(y_true, y_pred):
+    """Precision metric.
+    Only computes a batch-wise average of precision.
+    Computes the precision, a metric for multi-label classification of
+    how many selected items are relevant.
+    """
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
+    precision = true_positives / (predicted_positives + K.epsilon())
+    return precision
+
+
+def recall(y_true, y_pred):
+    """Recall metric.
+    Only computes a batch-wise average of recall.
+    Computes the recall, a metric for multi-label classification of
+    how many relevant items are selected.
+    """
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+    recall = true_positives / (possible_positives + K.epsilon())
+    return recall
+
 def train_task(model, model_name):
     train_datagen = ImageDataGenerator(preprocessing_function=preprocess_input)  # included in our dependencies
     train_generator = train_datagen.flow_from_directory('bbox_dataset\\train',
@@ -124,7 +148,7 @@ def train_task(model, model_name):
     top5_acc = functools.partial(keras.metrics.top_k_categorical_accuracy, k=5)
     top5_acc.__name__ = "top5_acc"
 
-    model.compile(optimizer=optimizers.SGD(lr=0.0001, momentum=0.9), loss='categorical_crossentropy', metrics=['accuracy', top5_acc, keras.metrics.precision, keras.metrics.recall])
+    model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['accuracy', top5_acc, precision, recall])
 
     step_size_train = train_generator.n // train_generator.batch_size
     valid_steps = valid_generator.n // valid_generator.batch_size
@@ -376,14 +400,10 @@ def get_roc(model):
         plt.legend(loc="lower right")
         plt.show()
 
-def test():
-    test_model = load_model_from_file("zad1")
-    get_roc(test_model)
-
 if __name__ == "__main__":
 
     image_size = 128
-    epochs = 10
+    epochs = 1
     batch = 32
 
     zad1()
