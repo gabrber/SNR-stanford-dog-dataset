@@ -23,9 +23,10 @@ from sklearn import preprocessing, neighbors, svm
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.svm import LinearSVC
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, classification_report, precision_recall_fscore_support
 from sklearn.svm import SVC
 import pickle
+from sklearn.metrics import roc_curve, auc
 
 def save_history(history, filename):
     with open(filename, 'w') as f:
@@ -123,7 +124,7 @@ def train_task(model, model_name):
     top5_acc = functools.partial(keras.metrics.top_k_categorical_accuracy, k=5)
     top5_acc.__name__ = "top5_acc"
 
-    model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['accuracy', top5_acc])
+    model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['accuracy', top5_acc, keras.metrics.precision, keras.metrics.recall])
     # Adam optimizer
     # loss function will be categorical cross entropy
     # evaluation metric will be accuracy
@@ -194,7 +195,6 @@ def prepare_zad3b_model(model):
     for layer in model.layers[-2:]:
         new_model.add(layer)
     return new_model
-
 
 def zad4_train(kernel, basemodel_id):
 
@@ -308,8 +308,80 @@ def zad4():
     # zad4_train('linear','zad3b')
     # zad4_train('poly', 'zad3b')
     # zad4_train('rbf','zad3b')
-    zad4_test('bbox_dataset\\test','zad3a','linear')
+    # zad4_test('bbox_dataset\\test','zad3a','linear')
     # zad4_test('dataset\\test', 'zad3b', 'poly')
+
+
+def get_roc(model):
+    test_datagen = ImageDataGenerator(preprocessing_function=preprocess_input)
+    test_generator = test_datagen.flow_from_directory('bbox_dataset\\test',
+                                                      target_size=(image_size, image_size),
+                                                      color_mode='rgb',
+                                                      batch_size=1,
+                                                      class_mode='categorical',
+                                                      shuffle=True)
+    test_steps = test_generator.n // test_generator.batch_size
+
+    Y = []
+    print("[INFO]Get labels")
+    for i in range(test_steps):
+      X_train, y_train = test_generator.next()
+      Y.append(y_train)
+
+    Y = np.asarray(Y).reshape((4201,120))
+    print(Y.shape)
+
+    print("[INFO]Get predictions")
+    predictions = model.predict_generator(test_generator, test_steps)
+    predictions = np.array(predictions)
+    print(predictions.shape)
+
+
+    print("[INFO]Get precision")
+    Y_label = []
+    Y_pred = []
+
+    for i in Y:
+        Y_label.append(np.argmax(i))
+    for i in predictions:
+        Y_pred.append(np.argmax(i))
+
+    Y_label = np.asarray(Y_label).flatten()
+    Y_pred = np.asarray(Y_pred).flatten()
+    print(Y_label)
+    print(Y_pred)
+
+    precisions, _, _, _ = precision_recall_fscore_support(Y_label, Y_pred)
+    print(precisions)
+
+    print("[INFO]Get 3 best precisions")
+    best_values = precisions.argsort()[-3:][::-1]
+    print(best_values)
+
+    print("[INFO]Create ROC Curves")
+    fpr = dict()
+    tpr = dict()
+    roc_auc = dict()
+    for i in range(120):
+        fpr[i], tpr[i], _ = roc_curve(Y[:, i], predictions[:, i])
+        roc_auc[i] = auc(fpr[i], tpr[i])
+
+    # Plot of a ROC curve for a specific class
+    for i in best_values:
+        plt.figure()
+        plt.plot(fpr[i], tpr[i], label='ROC curve (area = %0.2f)' % roc_auc[i])
+        plt.plot([0, 1], [0, 1], 'k--')
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title('Receiver operating characteristic example')
+        plt.legend(loc="lower right")
+        plt.show()
+
+def test():
+    test_model = load_model_from_file("zad1")
+    get_roc(test_model)
 
 if __name__ == "__main__":
 
@@ -317,9 +389,9 @@ if __name__ == "__main__":
     epochs = 10
     batch = 32
 
-    #zad1()
-    #zad2()
-    #zad2_extended()
-    #zad3a()
-    #zad3b()
+    zad1()
+    zad2()
+    zad2_extended()
+    zad3a()
+    zad3b()
     zad4()
