@@ -197,6 +197,7 @@ def prepare_zad3b_model(model):
 
 
 def zad4_train(kernel, basemodel_id):
+
     # model without last layer
     model = load_model_from_file(basemodel_id)
     new_model = Sequential()
@@ -220,11 +221,13 @@ def zad4_train(kernel, basemodel_id):
     clf = SVC(kernel=kernel, degree=2)
     clf.get_params(True)
 
-    for i in range(train_steps):
-        X_train, y_train = train_generator.next()
-        y = y_train.argmax(1)
-        X2 = new_model.predict(X_train)
-        clf.fit(X2, y)
+    for j in range (10):
+        for i in range(train_steps):
+            X_train, y_train = train_generator.next()
+            y = y_train.argmax(1)
+            X2 = new_model.predict(X_train)
+            print(y)
+            clf.fit(X2, y)
 
     filename = 'models\\'+kernel+'_'+basemodel_id+'.sav'
     pickle.dump(clf, open(filename, 'wb'))
@@ -299,13 +302,13 @@ def zad3b():
 
 def zad4():
     print("[INFO] Processing zad 4")
-    zad4_train('linear','zad3a')
+    # zad4_train('linear','zad3a')
     # zad4_train('poly','zad3a')
     # zad4_train('rbf','zad3a')
     # zad4_train('linear','zad3b')
     # zad4_train('poly', 'zad3b')
     # zad4_train('rbf','zad3b')
-    zad4_test('dataset\\test','zad3a','rbf')
+    zad4_test('bbox_dataset\\test','zad3a','linear')
     # zad4_test('dataset\\test', 'zad3b', 'poly')
 
 if __name__ == "__main__":
