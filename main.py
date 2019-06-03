@@ -91,6 +91,7 @@ def prepare_base_model():
     image_size, image_size, 3))  # imports the mobilenet model and discards the last 1000 neuron layer.
     x = base_model.output
     x = GlobalAveragePooling2D()(x)
+    x = Dense(1024, activation='relu')(x)
     prediction = Dense(120, activation='softmax')(x)  # final layer with softmax activation
     model = Model(inputs=base_model.input, outputs=prediction)
     return model
@@ -148,7 +149,8 @@ def train_task(model, model_name):
     top5_acc = functools.partial(keras.metrics.top_k_categorical_accuracy, k=5)
     top5_acc.__name__ = "top5_acc"
 
-    model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['accuracy', top5_acc, precision, recall])
+    model.compile(optimizer=optimizers.SGD(lr=0.0001, momentum=0.9), loss='categorical_crossentropy',
+                  metrics=['accuracy', top5_acc, precision, recall])
 
     step_size_train = train_generator.n // train_generator.batch_size
     valid_steps = valid_generator.n // valid_generator.batch_size
@@ -166,7 +168,6 @@ def train_task(model, model_name):
     save_history(history, "history\\" + model_name)
     plot_history(history)
     return model
-
 def test_task(model):
     test_datagen = ImageDataGenerator(preprocessing_function=preprocess_input)
     test_generator = test_datagen.flow_from_directory('bbox_dataset\\test',
@@ -201,7 +202,7 @@ def test_task(model):
 def load_model_from_file(model_name):
     top5_acc = functools.partial(keras.metrics.top_k_categorical_accuracy, k=5)
     top5_acc.__name__ = "top5_acc"
-    model = load_model("models\\" + model_name + ".h5", custom_objects={'top5_acc': top5_acc})
+    model = load_model("models\\" + model_name + ".h5", custom_objects={'top5_acc': top5_acc, 'precision': precision, 'recall': recall})
     return model
 
 def load_hisotry(model_name):
@@ -211,9 +212,9 @@ def load_hisotry(model_name):
 def prepare_zad3b_model(model):
     new_model = Sequential()
     # Layers from block 0 - 12 (without last block - 13)
-    for layer in model.layers[:-8]:
+    for layer in model.layers[:-9]:
         new_model.add(layer)
-    for layer in model.layers[-2:]:
+    for layer in model.layers[-3:]:
         new_model.add(layer)
     return new_model
 
@@ -280,7 +281,7 @@ def zad4_test(image_dir, basemodel_id, kernel):
 def zad1():
     print("[INFO] Processing zad 1")
     base_model = prepare_base_model()
-    trainable_layers_model = set_trainable_layers(base_model,-2)
+    trainable_layers_model = set_trainable_layers(base_model,-3)
     # load_hisotry("zad1")
     model = train_task(trainable_layers_model,"zad1")
     # model = load_model_from_file("zad1")
@@ -289,7 +290,7 @@ def zad1():
 def zad2():
     print("[INFO] Processing zad 2")
     base_model = prepare_base_model()
-    trainable_layers_model = set_trainable_layers(base_model,-5)
+    trainable_layers_model = set_trainable_layers(base_model,-6)
     # load_hisotry("zad2")
     model = train_task(trainable_layers_model,"zad2")
     # model = load_model_from_file("zad2")
@@ -298,7 +299,7 @@ def zad2():
 def zad2_extended():
     print("[INFO] Processing zad 2_extended")
     base_model = prepare_base_model()
-    trainable_layers_model = set_trainable_layers(base_model,-8)
+    trainable_layers_model = set_trainable_layers(base_model,-9)
     # load_hisotry("zad2_extended")
     model = train_task(trainable_layers_model,"zad2_extended")
     # model = load_model_from_file("zad2_extended")
