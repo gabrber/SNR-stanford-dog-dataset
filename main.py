@@ -209,6 +209,64 @@ def load_hisotry(model_name):
     history = json.load(open("history\\" + model_name, 'r'))
     plot_history_read(history)
 
+def get_roc(model):
+    test_datagen = ImageDataGenerator(preprocessing_function=preprocess_input)
+    test_generator = test_datagen.flow_from_directory('bbox_dataset\\test',
+                                                      target_size=(image_size, image_size),
+                                                      color_mode='rgb',
+                                                      batch_size=1,
+                                                      class_mode='categorical',
+                                                      shuffle=False)
+    test_steps = test_generator.n // test_generator.batch_size
+
+    print("[INFO]Get predictions")
+    predictions = model.predict_generator(test_generator, test_steps)
+    predictions = np.array(predictions)
+    print(predictions.shape)
+
+    print("[INFO]Get classification report")
+    Y_label = test_generator.classes
+    Y_pred = np.argmax(predictions, axis=1)
+
+    print(classification_report(Y_label, Y_pred))
+
+    # print(Y_label.shape)
+    # print(Y_pred.shape)
+
+    print("[INFO]Get precision")
+    precisions, _, _, _ = precision_recall_fscore_support(Y_label, Y_pred)
+    # print(precisions)
+
+    Y = np.zeros((test_generator.n,test_generator.num_classes))
+    for i in range(test_generator.n):
+        Y[i][Y_label[i]] = 1
+
+    print("[INFO]Get 3 best precisions")
+    best_values = precisions.argsort()[-3:][::-1]
+    print(best_values)
+
+    print("[INFO]Create ROC Curves")
+    fpr = dict()
+    tpr = dict()
+    roc_auc = dict()
+    for i in best_values:
+        print(precisions[i])
+        fpr[i], tpr[i], _ = roc_curve(Y[:, i], predictions[:, i])
+        roc_auc[i] = auc(fpr[i], tpr[i])
+
+    # Plot of a ROC curve for a specific class
+    for i in best_values:
+        plt.figure()
+        plt.plot(fpr[i], tpr[i], label='ROC curve (area = %0.2f)' % roc_auc[i])
+        plt.plot([0, 1], [0, 1], 'k--')
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title('Receiver operating characteristic example')
+        plt.legend(loc="lower right")
+        plt.show()    
+    
 def prepare_zad3b_model(model):
     new_model = Sequential()
     # Layers from block 0 - 12 (without last block - 13)
@@ -332,62 +390,6 @@ def zad4():
     # zad4_train('rbf','zad3b')
     # zad4_test('bbox_dataset\\test','zad3a','linear')
     # zad4_test('dataset\\test', 'zad3b', 'poly')
-
-
-def get_roc(model):
-    test_datagen = ImageDataGenerator(preprocessing_function=preprocess_input)
-    test_generator = test_datagen.flow_from_directory('bbox_dataset\\test',
-                                                      target_size=(image_size, image_size),
-                                                      color_mode='rgb',
-                                                      batch_size=1,
-                                                      class_mode='categorical',
-                                                      shuffle=False)
-    test_steps = test_generator.n // test_generator.batch_size
-
-    print("[INFO]Get predictions")
-    predictions = model.predict_generator(test_generator, test_steps)
-    predictions = np.array(predictions)
-    print(predictions.shape)
-
-    print("[INFO]Get precision")
-    Y_label = test_generator.classes
-    Y_pred = np.argmax(predictions, axis=1)
-
-    print(Y_label.shape)
-    print(Y_pred.shape)
-
-    precisions, _, _, _ = precision_recall_fscore_support(Y_label, Y_pred)
-    print(precisions)
-
-    Y = np.zeros((test_generator.n,test_generator.num_classes))
-    for i in range(test_generator.n):
-        Y[i][Y_label[i]] = 1
-
-    print("[INFO]Get 3 best precisions")
-    best_values = precisions.argsort()[-3:][::-1]
-    print(best_values)
-
-    print("[INFO]Create ROC Curves")
-    fpr = dict()
-    tpr = dict()
-    roc_auc = dict()
-    for i in best_values:
-        print(precisions[i])
-        fpr[i], tpr[i], _ = roc_curve(Y[:, i], predictions[:, i])
-        roc_auc[i] = auc(fpr[i], tpr[i])
-
-    # Plot of a ROC curve for a specific class
-    for i in best_values:
-        plt.figure()
-        plt.plot(fpr[i], tpr[i], label='ROC curve (area = %0.2f)' % roc_auc[i])
-        plt.plot([0, 1], [0, 1], 'k--')
-        plt.xlim([0.0, 1.0])
-        plt.ylim([0.0, 1.05])
-        plt.xlabel('False Positive Rate')
-        plt.ylabel('True Positive Rate')
-        plt.title('Receiver operating characteristic example')
-        plt.legend(loc="lower right")
-        plt.show()
 
 if __name__ == "__main__":
 
