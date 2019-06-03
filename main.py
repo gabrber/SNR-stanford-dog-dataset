@@ -341,40 +341,27 @@ def get_roc(model):
                                                       color_mode='rgb',
                                                       batch_size=1,
                                                       class_mode='categorical',
-                                                      shuffle=True)
+                                                      shuffle=False)
     test_steps = test_generator.n // test_generator.batch_size
-
-    Y = []
-    print("[INFO]Get labels")
-    for i in range(test_steps):
-      X_train, y_train = test_generator.next()
-      Y.append(y_train)
-
-    Y = np.asarray(Y).reshape((4201,120))
-    print(Y.shape)
 
     print("[INFO]Get predictions")
     predictions = model.predict_generator(test_generator, test_steps)
     predictions = np.array(predictions)
     print(predictions.shape)
 
-
     print("[INFO]Get precision")
-    Y_label = []
-    Y_pred = []
+    Y_label = test_generator.classes
+    Y_pred = np.argmax(predictions, axis=1)
 
-    for i in Y:
-        Y_label.append(np.argmax(i))
-    for i in predictions:
-        Y_pred.append(np.argmax(i))
-
-    Y_label = np.asarray(Y_label).flatten()
-    Y_pred = np.asarray(Y_pred).flatten()
-    print(Y_label)
-    print(Y_pred)
+    print(Y_label.shape)
+    print(Y_pred.shape)
 
     precisions, _, _, _ = precision_recall_fscore_support(Y_label, Y_pred)
     print(precisions)
+
+    Y = np.zeros((test_generator.n,test_generator.num_classes))
+    for i in range(test_generator.n):
+        Y[i][Y_label[i]] = 1
 
     print("[INFO]Get 3 best precisions")
     best_values = precisions.argsort()[-3:][::-1]
@@ -384,7 +371,8 @@ def get_roc(model):
     fpr = dict()
     tpr = dict()
     roc_auc = dict()
-    for i in range(120):
+    for i in best_values:
+        print(precisions[i])
         fpr[i], tpr[i], _ = roc_curve(Y[:, i], predictions[:, i])
         roc_auc[i] = auc(fpr[i], tpr[i])
 
