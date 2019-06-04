@@ -40,19 +40,30 @@ def plot_history(history):
     val_top5 = history.history['val_top5_acc']
     loss = history.history['loss']
     val_loss = history.history['val_loss']
+    train_precision = history.history['precision']
+    val_precision = history.history['val_precision']
+    train_recall = history.history['recall']
+    valid_recall = history.history['val_recall']
     x = range(1, len(train_top1_acc) + 1)
-    plt.figure(figsize=(12, 5))
-    plt.subplot(1, 2, 1)
+    plt.figure(figsize=(18, 5))
+    plt.subplot(1, 3, 1)
     plt.plot(x, train_top1_acc, 'b', label='Training top1 acc')
     plt.plot(x, train_top5_acc, 'c', label='Training top5 acc')
     plt.plot(x, val_top1, 'r', label='Validation top1 acc')
     plt.plot(x, val_top5, 'g', label='Validation top5 acc')
     plt.title('Training and validation top1, top5 accuracy')
     plt.legend()
-    plt.subplot(1, 2, 2)
+    plt.subplot(1, 3, 2)
     plt.plot(x, loss, 'b', label='Training loss')
     plt.plot(x, val_loss, 'r', label='Validation loss')
     plt.title('Training and validation loss')
+    plt.legend()
+    plt.subplot(1, 3, 3)
+    plt.plot(x, train_precision, 'b', label='Training precision')
+    plt.plot(x, train_recall, 'c', label='Training recall')
+    plt.plot(x, val_precision, 'r', label='Validation precision')
+    plt.plot(x, valid_recall, 'g', label='Validation recall')
+    plt.title('Training and validation precision and recall')
     plt.legend()
     plt.show()
 
@@ -63,19 +74,30 @@ def plot_history_read(history):
     val_top5 = history['val_top5_acc']
     loss = history['loss']
     val_loss = history['val_loss']
+    train_precision = history['precision']
+    val_precision = history['val_precision']
+    train_recall = history['recall']
+    valid_recall = history['val_recall']
     x = range(1, len(train_top1_acc) + 1)
-    plt.figure(figsize=(12, 5))
-    plt.subplot(1, 2, 1)
+    plt.figure(figsize=(18, 5))
+    plt.subplot(1, 3, 1)
     plt.plot(x, train_top1_acc, 'b', label='Training top1 acc')
     plt.plot(x, train_top5_acc, 'c', label='Training top5 acc')
     plt.plot(x, val_top1, 'r', label='Validation top1 acc')
     plt.plot(x, val_top5, 'g', label='Validation top5 acc')
     plt.title('Training and validation accuracy')
     plt.legend()
-    plt.subplot(1, 2, 2)
+    plt.subplot(1, 3, 2)
     plt.plot(x, loss, 'b', label='Training loss')
     plt.plot(x, val_loss, 'r', label='Validation loss')
     plt.title('Training and validation loss')
+    plt.legend()
+    plt.subplot(1, 3, 3)
+    plt.plot(x, train_precision, 'b', label='Training precision')
+    plt.plot(x, train_recall, 'c', label='Training recall')
+    plt.plot(x, val_precision, 'r', label='Validation precision')
+    plt.plot(x, valid_recall, 'g', label='Validation recall')
+    plt.title('Training and validation precision and recall')
     plt.legend()
     plt.show()
 
