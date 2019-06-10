@@ -261,7 +261,7 @@ def get_roc(model):
     Y_label = test_generator.classes
     Y_pred = np.argmax(predictions, axis=1)
 
-    print(classification_report(Y_label, Y_pred))
+    print(classification_report(Y_label, Y_pred, digits=4))
 
     # print(Y_label.shape)
     # print(Y_pred.shape)
