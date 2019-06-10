@@ -227,6 +227,17 @@ def load_model_from_file(model_name):
     model = load_model("models\\" + model_name + ".h5", custom_objects={'top5_acc': top5_acc, 'precision': precision, 'recall': recall})
     return model
 
+def load_3b(model_name):
+    top5_acc = functools.partial(keras.metrics.top_k_categorical_accuracy, k=5)
+    top5_acc.__name__ = "top5_acc"
+    
+    base_model = load_model_from_file("zad3a")
+    loaded_model = prepare_zad3b_model(base_model)
+    loaded_model.load_weights("models\\" + model_name + ".h5")
+    loaded_model.compile(optimizer=optimizers.SGD(lr=0.0001, momentum=0.9), loss='categorical_crossentropy',
+                  metrics=['accuracy', top5_acc, precision, recall])
+    return loaded_model
+
 def load_hisotry(model_name):
     history = json.load(open("history\\" + model_name, 'r'))
     plot_history_read(history)
@@ -395,11 +406,11 @@ def zad3a():
 
 def zad3b():
     print("[INFO] Processing zad 3b")
-    base_model = load_model_from_file("zad3a")
-    modified_model = prepare_zad3b_model(base_model)
-    # load_hisotry("zad3b")
-    model = train_task(modified_model,"zad3b")
-    # model = load_model_from_file("zad3b")
+    # base_model = load_model_from_file("zad3a")
+    # modified_model = prepare_zad3b_model(base_model)
+    load_hisotry("zad3b")
+    # model = train_task(modified_model,"zad3b")
+    model = load_3b("zad3b")
     test_task(model)
 
 def zad4():
