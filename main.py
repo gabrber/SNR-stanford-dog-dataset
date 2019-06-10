@@ -309,14 +309,14 @@ def prepare_zad3b_model(model):
         new_model.add(layer)
     return new_model
 
-def zad4_train(kernel, basemodel_id):
+def zad4_train(kernel, basemodel_id, base_model):
 
     # model without last layer
-    model = load_model_from_file(basemodel_id)
     new_model = Sequential()
-    for layer in model.layers[:-1]:
+    for layer in base_model.layers[:-1]:
         new_model.add(layer)
-    new_model.summary()
+
+    # new_model.summary()
 
     # training data
     train_datagen = ImageDataGenerator(preprocessing_function=preprocess_input)  # included in our dependencies
@@ -324,8 +324,7 @@ def zad4_train(kernel, basemodel_id):
                                                         target_size=(image_size, image_size),
                                                         color_mode='rgb',
                                                         batch_size=batch,
-                                                        class_mode='categorical',
-                                                        shuffle=True)
+                                                        class_mode='categorical')
     X_train = []
     y_train = []
     train_steps = train_generator.n // train_generator.batch_size
@@ -345,8 +344,7 @@ def zad4_train(kernel, basemodel_id):
     filename = 'models\\'+kernel+'_'+basemodel_id+'.sav'
     pickle.dump(clf, open(filename, 'wb'))
 
-def zad4_test(image_dir, basemodel_id, kernel):
-    base_model = load_model_from_file(basemodel_id)
+def zad4_test(image_dir, basemodel_id, kernel, base_model):
     model = Sequential()
     for layer in base_model.layers[:-1]:
         model.add(layer)
@@ -356,8 +354,7 @@ def zad4_test(image_dir, basemodel_id, kernel):
                                                       target_size=(image_size, image_size),
                                                       color_mode='rgb',
                                                       batch_size=10000,
-                                                      class_mode='categorical',
-                                                      shuffle=True)
+                                                      class_mode='categorical')
     X_test, y_test = test_generator.next()
     y_test = y_test.argmax(1)
     X2 = model.predict(X_test)
@@ -415,14 +412,16 @@ def zad3b():
 
 def zad4():
     print("[INFO] Processing zad 4")
-    # zad4_train('linear','zad3a')
-    # zad4_train('poly','zad3a')
-    # zad4_train('rbf','zad3a')
-    # zad4_train('linear','zad3b')
-    # zad4_train('poly', 'zad3b')
-    # zad4_train('rbf','zad3b')
-    # zad4_test('bbox_dataset\\test','zad3a','linear')
-    # zad4_test('dataset\\test', 'zad3b', 'poly')
+    base_model_3a = load_model_from_file("zad3a")
+    base_model_3b = load_3b("zad3b")
+    # zad4_train('linear','zad3a',base_model_3a)
+    # zad4_train('poly','zad3a',base_model_3a)
+    # zad4_train('rbf','zad3a',base_model_3a)
+    # zad4_train('linear','zad3b',base_model_3b)
+    # zad4_train('poly', 'zad3b',base_model_3b)
+    # zad4_train('rbf','zad3b',base_model_3b)
+    # zad4_test('bbox_dataset\\test','zad3a','linear',base_model_3a)
+    # zad4_test('dataset\\test', 'zad3b', 'poly',base_model_3b)
 
 if __name__ == "__main__":
 
